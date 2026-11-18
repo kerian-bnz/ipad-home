@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Home">
+<title>Home</title>
+<style>
+  :root { --bg:#0e1116; --card:#181c24; --line:#262b36; --text:#e8eaf0; --muted:#8a91a3; --accent:#7aa2ff; --green:#1db954; }
+  * { box-sizing:border-box; margin:0; }
+  html, body { height:100%; background:var(--bg); color:var(--text); font:16px/1.4 -apple-system, system-ui, sans-serif; overflow:hidden; }
+  .pager { display:flex; height:100%; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none; }
+  .pager::-webkit-scrollbar { display:none; }
+  .page { flex:0 0 100%; height:100%; scroll-snap-align:start; padding:max(20px, env(safe-area-inset-top)) 20px 44px; }
+  .grid { display:grid; gap:16px; height:100%; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; }
+  @media (orientation:portrait) { .grid { grid-template-columns:1fr; grid-template-rows:repeat(4, 1fr); } }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:20px; padding:20px; overflow:hidden; display:flex; flex-direction:column; min-height:0; }
+  .card h2 { font-size:13px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin-bottom:10px; font-weight:600; }
+  .muted { color:var(--muted); }
+  button { font:inherit; color:var(--text); background:#232836; border:1px solid var(--line); border-radius:12px; padding:10px 16px; cursor:pointer; }
+  button:active { background:#2d3344; }
+  input { font:inherit; color:var(--text); background:#11141a; border:1px solid var(--line); border-radius:10px; padding:8px 10px; width:100%; }
+  .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  .dots { position:fixed; bottom:14px; left:0; right:0; display:flex; justify-content:center; gap:8px; }
+  .dots span { width:8px; height:8px; border-radius:50%; background:#3a4050; }
+  .dots span.on { background:var(--text); }
+  /* clock */
+  #time { font-size:clamp(48px, 9vw, 110px); font-weight:200; font-variant-numeric:tabular-nums; line-height:1; }
+  #timer { font-size:clamp(28px, 4vw, 44px); font-variant-numeric:tabular-nums; margin:14px 0 10px; }
+  #timer.done { color:#ff6b6b; animation:blink 1s infinite; }
+  @keyframes blink { 50% { opacity:.3; } }
+  /* weather */
+  .now { display:flex; align-items:center; gap:16px; }
+  .now .big { font-size:clamp(44px, 7vw, 80px); font-weight:200; }
+  .icon { font-size:clamp(36px, 5vw, 60px); }
+  .days { display:grid; grid-template-columns:repeat(5, 1fr); gap:8px; margin-top:auto; text-align:center; }
+  .days div { background:#11141a; border-radius:12px; padding:8px 4px; font-size:14px; }
+  /* spotify */
+  .sp { display:flex; gap:16px; align-items:center; flex:1; min-height:0; }
+  .sp img { width:clamp(90px, 14vw, 170px); aspect-ratio:1; border-radius:12px; object-fit:cover; background:#11141a; }
+  .sp .title { font-size:20px; font-weight:600; }
+  .bar { height:4px; background:#2d3344; border-radius:2px; margin:12px 0; }
+  .bar i { display:block; height:100%; background:var(--green); border-radius:2px; width:0; }
+  /* calendar */
+  #events { overflow:auto; flex:1; }
+  .day { color:var(--accent); font-size:13px; font-weight:600; margin:10px 0 4px; }
+  .ev { display:flex; gap:12px; padding:6px 0; border-bottom:1px solid var(--line); }
+  .ev b { font-weight:500; min-width:64px; color:var(--muted); font-variant-numeric:tabular-nums; }
+  /* page 2 */
+  .claude { height:100%; display:flex; flex-direction:column; gap:16px; }
+  .links { display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:16px; }
+  .links a { display:block; background:var(--card); border:1px solid var(--line); border-radius:20px; padding:24px; color:var(--text); text-decoration:none; }
+  .links a strong { display:block; font-size:22px; margin-bottom:6px; }
+  details { background:var(--card); border:1px solid var(--line); border-radius:20px; padding:16px 20px; }
+  details label { display:block; margin:12px 0 4px; font-size:14px; color:var(--muted); }
+</style>
+</head>
+<body>
+<div class="pager" id="pager">
+  <!-- PAGE 1 -->
+  <section class="page">
+    <div class="grid">
+      <div class="card" id="weatherCard">
+        <h2>Weather · St Kilda</h2>
+        <div class="now"><span class="icon" id="wIcon">…</span><span class="big" id="wTemp">--°</span>
+          <div><div id="wDesc"></div><div class="muted" id="wFeel"></div></div></div>
+        <div class="days" id="wDays"></div>
+      </div>
+
+      <div class="card">
+        <h2>Spotify</h2>
+        <div id="spOut" class="row" style="flex:1">
+          <button id="spLogin">Connect Spotify</button>
+          <span class="muted" id="spMsg"></span>
+        </div>
+        <div id="spIn" style="display:none;flex:1;flex-direction:column">
+          <div class="sp"><img id="spArt" alt="">
+            <div style="min-width:0"><div class="title" id="spTitle">Nothing playing</div><div class="muted" id="spArtist"></div><div class="muted" id="spDevice" style="font-size:13px;margin-top:4px"></div></div></div>
+          <div class="bar"><i id="spBar"></i></div>
+          <div class="row" style="justify-content:center">
+            <button data-sp="previous">⏮</button><button id="spPlay">▶</button><button data-sp="next">⏭</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Clock &amp; timer</h2>
+        <div id="time">--:--</div>
+        <div class="muted" id="date"></div>
+        <div id="timer">00:00</div>
+        <div class="row">
+          <button data-min="1">1m</button><button data-min="5">5m</button><button data-min="10">10m</button><button data-min="25">25m</button>
+          <button id="tStart">Start</button><button id="tReset">Reset</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Calendar · next 7 days</h2>
+        <div id="events" class="muted">Add your calendar link in Settings (page 2).</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PAGE 2 -->
+  <section class="page">
+    <div class="claude">
+      <div class="links">
+        <a href="https://claude.ai/code"><strong>Claude Code</strong><span class="muted">Cloud sessions on your repos. They keep running when the PC is off.</span></a>
+        <a href="https://claude.ai/new"><strong>Claude chat</strong><span class="muted">New conversation</span></a>
+        <a href="https://claude.ai/code/artifacts"><strong>My artifacts</strong><span class="muted">Dashboards and pages Claude made</span></a>
+      </div>
+      <details>
+        <summary>Settings</summary>
+        <label>Spotify Client ID (from developer.spotify.com)</label>
+        <input id="setSpotify" autocomplete="off">
+        <label>Google Calendar helper URL (Apps Script web app, ends in /exec)</label>
+        <input id="setCal" autocomplete="off">
+        <div class="row" style="margin-top:12px"><button id="setSave">Save</button><span class="muted" id="setMsg"></span></div>
+        <p class="muted" style="margin-top:10px;font-size:13px">Spotify redirect URI to register: <code id="redir"></code></p>
+      </details>
+    </div>
+  </section>
+</div>
+<div class="dots"><span class="on"></span><span></span></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const store = { get(k) { try { return localStorage.getItem(k) || ''; } catch { return ''; } },
+                set(k, v) { try { localStorage.setItem(k, v); } catch {} } };
+
+// ---- pager dots + keep the screen awake ----
+$('pager').addEventListener('scroll', e => {
+  const i = Math.round(e.target.scrollLeft / e.target.clientWidth);
+  document.querySelectorAll('.dots span').forEach((d, n) => d.classList.toggle('on', n === i));
+});
+async function wake() { try { await navigator.wakeLock?.request('screen'); } catch {} }
+wake(); document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && wake());
+
+// ---- clock ----
+function tick() {
+  const d = new Date();
+  $('time').textContent = d.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+  $('date').textContent = d.toLocaleDateString([], { weekday:'long', day:'numeric', month:'long' });
+}
+tick(); setInterval(tick, 1000);
+
+// ---- timer ----
+let tLeft = 0, tEnd = 0, tInt = null;
+const fmt = s => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+function tShow() { $('timer').textContent = fmt(Math.max(0, Math.ceil(tLeft))); }
+function beep() {
+  try { const a = new AudioContext();
+    for (let i = 0; i < 6; i++) { const o = a.createOscillator(), g = a.createGain();
+      o.frequency.value = 880; o.connect(g); g.connect(a.destination);
+      g.gain.setValueAtTime(.3, a.currentTime + i * .5); g.gain.setValueAtTime(0, a.currentTime + i * .5 + .25);
+      o.start(a.currentTime + i * .5); o.stop(a.currentTime + i * .5 + .3); } } catch {}
+}
+function tStop() { clearInterval(tInt); tInt = null; $('tStart').textContent = 'Start'; }
+document.querySelectorAll('[data-min]').forEach(b => b.onclick = () => {
+  tStop(); tLeft = b.dataset.min * 60; $('timer').classList.remove('done'); tShow();
+});
+$('tStart').onclick = () => {
+  if (tInt) { tLeft = (tEnd - Date.now()) / 1000; tStop(); return; }
+  if (tLeft <= 0) return;
+  $('timer').classList.remove('done'); tEnd = Date.now() + tLeft * 1000; $('tStart').textContent = 'Pause';
+  tInt = setInterval(() => {
+    tLeft = (tEnd - Date.now()) / 1000; tShow();
+    if (tLeft <= 0) { tStop(); tLeft = 0; $('timer').classList.add('done'); beep(); }
+  }, 250);
+};
+$('tReset').onclick = () => { tStop(); tLeft = 0; $('timer').classList.remove('done'); tShow(); };
+
+// ---- weather (Open-Meteo, free, no key) ----
+const WMO = { 0:['☀️','Clear'],1:['🌤️','Mostly clear'],2:['⛅','Partly cloudy'],3:['☁️','Cloudy'],45:['🌫️','Fog'],48:['🌫️','Fog'],
+  51:['🌦️','Drizzle'],53:['🌦️','Drizzle'],55:['🌦️','Drizzle'],61:['🌧️','Rain'],63:['🌧️','Rain'],65:['🌧️','Heavy rain'],
+  66:['🌧️','Freezing rain'],67:['🌧️','Freezing rain'],71:['🌨️','Snow'],73:['🌨️','Snow'],75:['🌨️','Snow'],77:['🌨️','Snow'],
+  80:['🌦️','Showers'],81:['🌧️','Showers'],82:['⛈️','Heavy showers'],95:['⛈️','Storm'],96:['⛈️','Storm'],99:['⛈️','Storm'] };
+const wmo = c => WMO[c] || ['🌡️', ''];
+async function weather() {
+  try {
+    const r = await fetch('https://api.open-meteo.com/v1/forecast?latitude=-37.8676&longitude=144.9809'
+      + '&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m'
+      + '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max'
+      + '&timezone=Australia%2FMelbourne&forecast_days=5');
+    const w = await r.json(), c = w.current, d = w.daily;
+    $('wIcon').textContent = wmo(c.weather_code)[0];
+    $('wTemp').textContent = Math.round(c.temperature_2m) + '°';
+    $('wDesc').textContent = wmo(c.weather_code)[1];
+    $('wFeel').textContent = `Feels ${Math.round(c.apparent_temperature)}° · wind ${Math.round(c.wind_speed_10m)} km/h`;
+    $('wDays').innerHTML = d.time.map((t, i) => `<div>${new Date(t + 'T12:00').toLocaleDateString([], { weekday:'short' })}<br>
+      <span style="font-size:22px">${wmo(d.weather_code[i])[0]}</span><br>${Math.round(d.temperature_2m_max[i])}° <span class="muted">${Math.round(d.temperature_2m_min[i])}°</span>
+      <br><span class="muted">${d.precipitation_probability_max[i] ?? 0}%</span></div>`).join('');
+  } catch { $('wDesc').textContent = 'Weather unavailable'; }
+}
+weather(); setInterval(weather, 15 * 60 * 1000);
+
+// ---- calendar (Google Apps Script helper returns JSON) ----
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
+async function calendar() {
+  const url = store.get('calUrl');
+  if (!url) return;
+  try {
+    const evs = await (await fetch(url)).json();
+    if (!evs.length) { $('events').textContent = 'Nothing in the next 7 days.'; return; }
+    let html = '', last = '';
+    for (const e of evs) {
+      const s = new Date(e.start), day = s.toLocaleDateString([], { weekday:'long', day:'numeric', month:'short' });
+      if (day !== last) { html += `<div class="day">${day}</div>`; last = day; }
+      html += `<div class="ev"><b>${e.allDay ? 'All day' : s.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' })}</b><span>${esc(e.title)}</span></div>`;
+    }
+    $('events').classList.remove('muted'); $('events').innerHTML = html;
+  } catch { $('events').textContent = 'Calendar unavailable. Check the helper URL.'; }
+}
+calendar(); setInterval(calendar, 10 * 60 * 1000);
+
+// ---- Spotify (Authorization Code + PKCE, no server needed) ----
+const REDIRECT = location.origin + location.pathname;
+const SCOPES = 'user-read-playback-state user-modify-playback-state user-read-currently-playing';
+const b64url = buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+async function spLogin() {
+  const id = store.get('spClient');
+  if (!id) { $('spMsg').textContent = 'Add your Spotify Client ID in Settings (page 2) first.'; return; }
+  const verifier = b64url(crypto.getRandomValues(new Uint8Array(48)));
+  store.set('spVerifier', verifier);
+  const challenge = b64url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier)));
+  location.href = 'https://accounts.spotify.com/authorize?' + new URLSearchParams({ response_type:'code', client_id:id, scope:SCOPES,
+    redirect_uri:REDIRECT, code_challenge_method:'S256', code_challenge:challenge });
+}
+async function spToken(params) {
+  const r = await fetch('https://accounts.spotify.com/api/token', { method:'POST',
+    headers:{ 'Content-Type':'application/x-www-form-urlencoded' }, body:new URLSearchParams({ client_id:store.get('spClient'), ...params }) });
+  const t = await r.json();
+  if (!t.access_token) throw new Error(t.error || 'token');
+  store.set('spAccess', t.access_token); store.set('spExpires', Date.now() + t.expires_in * 1000 - 60000);
+  if (t.refresh_token) store.set('spRefresh', t.refresh_token);
+}
+async function spAccess() {
+  if (Date.now() > +store.get('spExpires')) await spToken({ grant_type:'refresh_token', refresh_token:store.get('spRefresh') });
+  return store.get('spAccess');
+}
+async function sp(path, method = 'GET') {
+  const r = await fetch('https://api.spotify.com/v1/me/player' + path, { method, headers:{ Authorization:'Bearer ' + await spAccess() } });
+  return r.status === 200 && method === 'GET' ? r.json() : null;
+}
+let spPlaying = false;
+async function spRefreshNow() {
+  try {
+    const p = await sp('');
+    const it = p?.item;
+    spPlaying = !!p?.is_playing; $('spPlay').textContent = spPlaying ? '⏸' : '▶';
+    $('spTitle').textContent = it ? it.name : 'Nothing playing';
+    $('spArtist').textContent = it ? (it.artists || []).map(a => a.name).join(', ') : 'Start Spotify on any device';
+    $('spDevice').textContent = p?.device ? 'On ' + p.device.name : '';
+    $('spArt').src = it?.album?.images?.[0]?.url || '';
+    $('spBar').style.width = it ? (p.progress_ms / it.duration_ms * 100) + '%' : 0;
+  } catch { $('spTitle').textContent = 'Spotify error. Reconnect.'; store.set('spRefresh', ''); spInit(); }
+}
+function spInit() {
+  const on = !!store.get('spRefresh');
+  $('spOut').style.display = on ? 'none' : 'flex';
+  $('spIn').style.display = on ? 'flex' : 'none';
+  if (on) spRefreshNow();
+}
+$('spLogin').onclick = spLogin;
+$('spPlay').onclick = async () => { await sp(spPlaying ? '/pause' : '/play', 'PUT'); setTimeout(spRefreshNow, 400); };
+document.querySelectorAll('[data-sp]').forEach(b => b.onclick = async () => { await sp('/' + b.dataset.sp, 'POST'); setTimeout(spRefreshNow, 600); });
+(async () => {
+  const code = new URLSearchParams(location.search).get('code');
+  if (code) {
+    history.replaceState(null, '', REDIRECT);
+    try { await spToken({ grant_type:'authorization_code', code, redirect_uri:REDIRECT, code_verifier:store.get('spVerifier') }); }
+    catch { $('spMsg').textContent = 'Spotify sign-in failed. Try again.'; }
+  }
+  spInit(); setInterval(() => store.get('spRefresh') && spRefreshNow(), 5000);
+})();
+
+// ---- settings ----
+$('redir').textContent = REDIRECT;
+$('setSpotify').value = store.get('spClient');
+$('setCal').value = store.get('calUrl');
+$('setSave').onclick = () => {
+  store.set('spClient', $('setSpotify').value.trim()); store.set('calUrl', $('setCal').value.trim());
+  $('setMsg').textContent = 'Saved'; calendar(); spInit();
+};
+</script>
+</body>
+</html>
