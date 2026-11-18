@@ -1,7 +1,7 @@
-// Paste into a NEW project on script.google.com, then Deploy > New deployment > Web app,
-// Execute as: Me, Who has access: Anyone. Copy the /exec URL into the dashboard Settings.
+// Open the "FBA-Tracker (iPad dashboard)" sheet, Extensions > Apps Script, paste this, Run doGet once,
+// then Deploy > New deployment > Web app, Execute as: Me, Who has access: Anyone. Copy the /exec URL.
 // Anyone holding that URL can read these numbers: keep it private.
-var SHEET_ID = '1_3iMcWkAlUIAgqfk7y5SrJQkvrpPKwMu3doSZJL_dBY'; // "FBA-Tracker (iPad dashboard)" in your Drive
+var SHEET_ID = '1_3iMcWkAlUIAgqfk7y5SrJQkvrpPKwMu3doSZJL_dBY'; // used only if the script is not attached to the sheet
 
 function rows(ss, name, firstRow) {
   var sh = ss.getSheetByName(name);
@@ -11,7 +11,7 @@ function rows(ss, name, firstRow) {
 }
 
 function doGet() {
-  var ss = SpreadsheetApp.openById(SHEET_ID);
+  var ss = SpreadsheetApp.getActiveSpreadsheet() || SpreadsheetApp.openById(SHEET_ID);
   var summary = rows(ss, 'Summary', 3).slice(0, 5).map(function (r) { return { label: r[0], value: r[1] }; });
   var weeks = rows(ss, 'Summary', 11).map(function (r) { return { week: r[0], profit: r[1], vsGoal: r[2] }; });
   var products = rows(ss, 'Product Check', 4).map(function (r) {
