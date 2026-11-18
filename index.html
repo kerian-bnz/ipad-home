@@ -50,10 +50,19 @@
   .ev { display:flex; gap:12px; padding:6px 0; border-bottom:1px solid var(--line); }
   .ev b { font-weight:500; min-width:64px; color:var(--muted); font-variant-numeric:tabular-nums; }
   /* page 2 */
-  .claude { height:100%; display:flex; flex-direction:column; gap:16px; }
-  .links { display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:16px; }
-  .links a { display:block; background:var(--card); border:1px solid var(--line); border-radius:20px; padding:24px; color:var(--text); text-decoration:none; }
-  .links a strong { display:block; font-size:22px; margin-bottom:6px; }
+  .claude { height:100%; display:flex; flex-direction:column; gap:16px; overflow:auto; }
+  .tiles { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:12px; }
+  .tile { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:14px 16px; }
+  .tile div { font-size:26px; font-weight:300; margin-top:4px; }
+  .amz { display:grid; grid-template-columns:1.4fr 1fr; gap:16px; flex:1; min-height:280px; }
+  @media (orientation:portrait) { .amz { grid-template-columns:1fr; } }
+  .scroll { overflow:auto; flex:1; font-size:15px; }
+  .pr { padding:8px 0; border-bottom:1px solid var(--line); }
+  .pr .nums { display:flex; gap:14px; flex-wrap:wrap; font-size:13px; color:var(--muted); margin-top:2px; }
+  .yes { color:var(--green); font-weight:600; } .no { color:#ff6b6b; font-weight:600; }
+  .links { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; }
+  .links a { display:block; background:var(--card); border:1px solid var(--line); border-radius:20px; padding:18px 20px; color:var(--text); text-decoration:none; }
+  .links a strong { display:block; font-size:19px; margin-bottom:4px; }
   details { background:var(--card); border:1px solid var(--line); border-radius:20px; padding:16px 20px; }
   details label { display:block; margin:12px 0 4px; font-size:14px; color:var(--muted); }
 </style>
@@ -107,10 +116,15 @@
   <!-- PAGE 2 -->
   <section class="page">
     <div class="claude">
+      <div class="tiles" id="amzSummary"><div class="muted">Add your Amazon helper link in Settings below.</div></div>
+      <div class="amz">
+        <div class="card"><h2>Products to check</h2><div class="scroll" id="amzProducts"></div></div>
+        <div class="card"><h2>Bought · weekly profit</h2><div class="scroll" id="amzLog"></div></div>
+      </div>
       <div class="links">
-        <a href="https://claude.ai/code"><strong>Claude Code</strong><span class="muted">Cloud sessions on your repos. They keep running when the PC is off.</span></a>
-        <a href="https://claude.ai/new"><strong>Claude chat</strong><span class="muted">New conversation</span></a>
-        <a href="https://claude.ai/code/artifacts"><strong>My artifacts</strong><span class="muted">Dashboards and pages Claude made</span></a>
+        <a href="https://sellercentral.amazon.com.au/"><strong>Seller Central</strong><span class="muted">Orders, inventory, payouts</span></a>
+        <a href="https://www.amazon.com.au/"><strong>Amazon AU</strong><span class="muted">Check listings and prices</span></a>
+        <a href="https://keepa.com/"><strong>Keepa</strong><span class="muted">Price and rank history</span></a>
       </div>
       <details>
         <summary>Settings</summary>
@@ -118,6 +132,8 @@
         <input id="setSpotify" autocomplete="off">
         <label>Google Calendar helper URL (Apps Script web app, ends in /exec)</label>
         <input id="setCal" autocomplete="off">
+        <label>Amazon helper URL (Apps Script web app, ends in /exec)</label>
+        <input id="setAmz" autocomplete="off">
         <div class="row" style="margin-top:12px"><button id="setSave">Save</button><span class="muted" id="setMsg"></span></div>
         <p class="muted" style="margin-top:10px;font-size:13px">Spotify redirect URI to register: <code id="redir"></code></p>
       </details>
@@ -281,10 +297,30 @@ document.querySelectorAll('[data-sp]').forEach(b => b.onclick = async () => { aw
 $('redir').textContent = REDIRECT;
 $('setSpotify').value = store.get('spClient');
 $('setCal').value = store.get('calUrl');
+$('setAmz').value = store.get('amzUrl');
 $('setSave').onclick = () => {
   store.set('spClient', $('setSpotify').value.trim()); store.set('calUrl', $('setCal').value.trim());
-  $('setMsg').textContent = 'Saved'; calendar(); spInit();
+  store.set('amzUrl', $('setAmz').value.trim());
+  $('setMsg').textContent = 'Saved'; calendar(); spInit(); amazon();
 };
+
+// ---- Amazon (Google Sheet copy of FBA-Tracker via Apps Script helper) ----
+async function amazon() {
+  const url = store.get('amzUrl');
+  if (!url) return;
+  try {
+    const a = await (await fetch(url)).json();
+    $('amzSummary').innerHTML = a.summary.map(s => `<div class="tile"><span class="muted">${esc(s.label)}</span><div>${esc(s.value)}</div></div>`).join('');
+    $('amzProducts').innerHTML = a.products.length ? a.products.map(p => `<div class="pr">
+      <div><span class="${p.verdict === 'YES' ? 'yes' : 'no'}">${esc(p.verdict || '?')}</span> ${esc(p.name)}</div>
+      <div class="nums"><span>${esc(p.store)} ${esc(p.buy)} → ${esc(p.sell)}</span><span>Profit ${esc(p.profit)}</span><span>ROI ${esc(p.roi)}</span></div></div>`).join('')
+      : '<span class="muted">No products to check.</span>';
+    const weeks = a.weeks.filter(w => w.week).map(w => `<div class="pr">Week ${esc(w.week)} · ${esc(w.profit)} <span class="muted">(${esc(w.vsGoal)} vs goal)</span></div>`);
+    const log = a.log.map(l => `<div class="pr">${esc(l.date)} · ${esc(l.name)}<div class="nums"><span>${esc(l.sold)}/${esc(l.units)} sold</span><span>Profit ${esc(l.profit)}</span></div></div>`);
+    $('amzLog').innerHTML = log.concat(weeks).join('') || '<span class="muted">Nothing bought yet.</span>';
+  } catch { $('amzSummary').innerHTML = '<div class="muted">Amazon data unavailable. Check the helper URL.</div>'; }
+}
+amazon(); setInterval(amazon, 10 * 60 * 1000);
 </script>
 </body>
 </html>
