@@ -1,7 +1,7 @@
 // Open the "FBA-Tracker (iPad dashboard)" sheet, Extensions > Apps Script, paste this, Run doGet once,
 // then Deploy > New deployment > Web app, Execute as: Me, Who has access: Anyone. Copy the /exec URL.
 // Anyone holding that URL can read these numbers: keep it private.
-var SHEET_ID = '1_3iMcWkAlUIAgqfk7y5SrJQkvrpPKwMu3doSZJL_dBY'; // used only if the script is not attached to the sheet
+var SHEET_ID = '1xJX8RgojtrYn1WFcxMXigKMyOL5cHCjexq3OAEvEmLg'; // used only if the script is not attached to the sheet
 
 function rows(ss, name, firstRow) {
   var sh = ss.getSheetByName(name);
