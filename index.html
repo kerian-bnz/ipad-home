@@ -315,8 +315,8 @@ async function amazon() {
       <div><span class="${p.verdict === 'YES' ? 'yes' : 'no'}">${esc(p.verdict || '?')}</span> ${esc(p.name)}</div>
       <div class="nums"><span>${esc(p.store)} ${esc(p.buy)} → ${esc(p.sell)}</span><span>Profit ${esc(p.profit)}</span><span>ROI ${esc(p.roi)}</span></div></div>`).join('')
       : '<span class="muted">No products to check.</span>';
-    const weeks = a.weeks.filter(w => w.week).map(w => `<div class="pr">Week ${esc(w.week)} · ${esc(w.profit)} <span class="muted">(${esc(w.vsGoal)} vs goal)</span></div>`);
-    const log = a.log.map(l => `<div class="pr">${esc(l.date)} · ${esc(l.name)}<div class="nums"><span>${esc(l.sold)}/${esc(l.units)} sold</span><span>Profit ${esc(l.profit)}</span></div></div>`);
+    const weeks = a.weeks.filter(w => w.week && w.profit).map(w => `<div class="pr">Week ${esc(w.week)} · ${esc(w.profit)} <span class="muted">(${esc(w.vsGoal)} vs goal)</span></div>`);
+    const log = a.log.filter(l => l.date && l.date !== 'Date bought').map(l => `<div class="pr">${esc(l.date)} · ${esc(l.name)}<div class="nums"><span>${esc(l.sold)}/${esc(l.units)} sold</span><span>Profit ${esc(l.profit)}</span></div></div>`);
     $('amzLog').innerHTML = log.concat(weeks).join('') || '<span class="muted">Nothing bought yet.</span>';
   } catch { $('amzSummary').innerHTML = '<div class="muted">Amazon data unavailable. Check the helper URL.</div>'; }
 }
