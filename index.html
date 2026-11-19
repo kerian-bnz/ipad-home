@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="Home">
 <title>Home</title>
 <style>
-  :root { --bg:#0e1116; --card:#181c24; --line:#262b36; --text:#e8eaf0; --muted:#8a91a3; --accent:#7aa2ff; --green:#1db954; }
+  :root { --bg:#36433a; --card:#46554a; --line:#5a6a5d; --text:#f4efe6; --muted:#c8c1ae; --accent:#e0b07a; --green:#a8d08d; --well:#3c493f; --btn:#56665a; --red:#ff9580; } /* sage, wood, warm white */
   * { box-sizing:border-box; margin:0; }
   html, body { height:100%; background:var(--bg); color:var(--text); font:16px/1.4 -apple-system, system-ui, sans-serif; overflow:hidden; }
   .pager { display:flex; height:100%; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none; }
@@ -20,29 +20,29 @@
   .card { background:var(--card); border:1px solid var(--line); border-radius:20px; padding:20px; overflow:hidden; display:flex; flex-direction:column; min-height:0; }
   .card h2 { font-size:13px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin-bottom:10px; font-weight:600; }
   .muted { color:var(--muted); }
-  button { font:inherit; color:var(--text); background:#232836; border:1px solid var(--line); border-radius:12px; padding:10px 16px; cursor:pointer; }
-  button:active { background:#2d3344; }
-  input { font:inherit; color:var(--text); background:#11141a; border:1px solid var(--line); border-radius:10px; padding:8px 10px; width:100%; }
+  button { font:inherit; color:var(--text); background:var(--btn); border:1px solid var(--line); border-radius:12px; padding:10px 16px; cursor:pointer; }
+  button:active { background:var(--line); }
+  input { font:inherit; color:var(--text); background:var(--well); border:1px solid var(--line); border-radius:10px; padding:8px 10px; width:100%; }
   .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
   .dots { position:fixed; bottom:14px; left:0; right:0; display:flex; justify-content:center; gap:8px; }
-  .dots span { width:8px; height:8px; border-radius:50%; background:#3a4050; }
+  .dots span { width:8px; height:8px; border-radius:50%; background:var(--line); }
   .dots span.on { background:var(--text); }
   /* clock */
   #time { font-size:clamp(48px, 9vw, 110px); font-weight:200; font-variant-numeric:tabular-nums; line-height:1; }
   #timer { font-size:clamp(28px, 4vw, 44px); font-variant-numeric:tabular-nums; margin:14px 0 10px; }
-  #timer.done { color:#ff6b6b; animation:blink 1s infinite; }
+  #timer.done { color:var(--red); animation:blink 1s infinite; }
   @keyframes blink { 50% { opacity:.3; } }
   /* weather */
   .now { display:flex; align-items:center; gap:16px; }
   .now .big { font-size:clamp(44px, 7vw, 80px); font-weight:200; }
   .icon { font-size:clamp(36px, 5vw, 60px); }
   .days { display:grid; grid-template-columns:repeat(5, 1fr); gap:8px; margin-top:auto; text-align:center; }
-  .days div { background:#11141a; border-radius:12px; padding:8px 4px; font-size:14px; }
+  .days div { background:var(--well); border-radius:12px; padding:8px 4px; font-size:14px; }
   /* spotify */
   .sp { display:flex; gap:16px; align-items:center; flex:1; min-height:0; }
-  .sp img { width:clamp(90px, 14vw, 170px); aspect-ratio:1; border-radius:12px; object-fit:cover; background:#11141a; }
+  .sp img { width:clamp(90px, 14vw, 170px); aspect-ratio:1; border-radius:12px; object-fit:cover; background:var(--well); }
   .sp .title { font-size:20px; font-weight:600; }
-  .bar { height:4px; background:#2d3344; border-radius:2px; margin:12px 0; }
+  .bar { height:4px; background:var(--well); border-radius:2px; margin:12px 0; }
   .bar i { display:block; height:100%; background:var(--green); border-radius:2px; width:0; }
   /* calendar */
   #events { overflow:auto; flex:1; }
@@ -59,7 +59,7 @@
   .scroll { overflow:auto; flex:1; font-size:15px; }
   .pr { padding:8px 0; border-bottom:1px solid var(--line); }
   .pr .nums { display:flex; gap:14px; flex-wrap:wrap; font-size:13px; color:var(--muted); margin-top:2px; }
-  .yes { color:var(--green); font-weight:600; } .no { color:#ff6b6b; font-weight:600; }
+  .yes { color:var(--green); font-weight:600; } .no { color:var(--red); font-weight:600; }
   .links { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; }
   .links a { display:block; background:var(--card); border:1px solid var(--line); border-radius:20px; padding:18px 20px; color:var(--text); text-decoration:none; }
   .links a strong { display:block; font-size:19px; margin-bottom:4px; }
