@@ -263,8 +263,12 @@ async function spToken(params) {
   store.set('spAccess', t.access_token); store.set('spExpires', Date.now() + t.expires_in * 1000 - 60000);
   if (t.refresh_token) store.set('spRefresh', t.refresh_token);
 }
+let spPending = null; // one refresh at a time: the 5 s poll must not send the same refresh token twice
 async function spAccess() {
-  if (Date.now() > +store.get('spExpires')) await spToken({ grant_type:'refresh_token', refresh_token:store.get('spRefresh') });
+  if (Date.now() > +store.get('spExpires')) {
+    spPending = spPending || spToken({ grant_type:'refresh_token', refresh_token:store.get('spRefresh') }).finally(() => { spPending = null; });
+    await spPending;
+  }
   return store.get('spAccess');
 }
 async function sp(path, method = 'GET') {
@@ -282,7 +286,13 @@ async function spRefreshNow() {
     $('spDevice').textContent = p?.device ? 'On ' + p.device.name : '';
     $('spArt').src = it?.album?.images?.[0]?.url || '';
     $('spBar').style.width = it ? (p.progress_ms / it.duration_ms * 100) + '%' : 0;
-  } catch { $('spTitle').textContent = 'Spotify error. Reconnect.'; store.set('spRefresh', ''); spInit(); }
+  } catch (e) {
+    // Only a refused login is final; network blips keep the connection and retry on the next poll.
+    if (/^invalid_(grant|client|request)$/.test(e.message)) {
+      store.set('spRefresh', ''); spInit();
+      $('spMsg').textContent = 'Spotify refused the saved login (' + e.message + '). Connect again.';
+    } else $('spDevice').textContent = 'Spotify unreachable, retrying…';
+  }
 }
 function spInit() {
   const on = !!store.get('spRefresh');
@@ -301,6 +311,12 @@ document.querySelectorAll('[data-sp]').forEach(b => b.onclick = async () => { aw
     catch { $('spMsg').textContent = 'Spotify sign-in failed. Try again.'; }
   }
   spInit(); setInterval(() => store.get('spRefresh') && spRefreshNow(), 5000);
+  // Say why Spotify isn't connected when the setup link is involved.
+  const viaLink = location.hash.includes('sprt=');
+  if (!store.get('spRefresh') && !$('spMsg').textContent)
+    $('spMsg').textContent = navigator.standalone
+      ? (viaLink ? '' : 'This Home Screen icon was added without the Spotify setup link.')
+      : (viaLink ? 'Spotify connects in the Home Screen app: tap Share → Add to Home Screen.' : '');
 })();
 
 // ---- settings ----
