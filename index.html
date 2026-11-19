@@ -153,7 +153,8 @@ new URLSearchParams(location.hash.slice(1)).forEach((v, k) => {
   if (key && v.startsWith('https://script.google.com/')) store.set(key, v);
   if (k === 'sp' && /^[0-9a-f]{32}$/.test(v)) store.set('spClient', v);
   // Spotify login done on another device: only used once, since Spotify rotates refresh tokens and this one goes stale.
-  if (k === 'sprt' && !store.get('spRefresh')) { store.set('spRefresh', v); store.set('spExpires', '0'); }
+  // Home Screen app only: if Safari used it first, Spotify would rotate it and the app would get a dead token.
+  if (k === 'sprt' && navigator.standalone && !store.get('spRefresh')) { store.set('spRefresh', v); store.set('spExpires', '0'); }
 });
 
 // ---- pager dots + keep the screen awake ----
