@@ -146,6 +146,12 @@
 const $ = id => document.getElementById(id);
 const store = { get(k) { try { return localStorage.getItem(k) || ''; } catch { return ''; } },
                 set(k, v) { try { localStorage.setItem(k, v); } catch {} } };
+// Setup link: #cal=<url>&amz=<url> fills Settings without typing (the # part never reaches the server).
+// Kept in the address on purpose so "Add to Home Screen" from this page carries it into the app's own storage.
+new URLSearchParams(location.hash.slice(1)).forEach((v, k) => {
+  const key = { cal: 'calUrl', amz: 'amzUrl' }[k];
+  if (key && v.startsWith('https://script.google.com/')) store.set(key, v);
+});
 
 // ---- pager dots + keep the screen awake ----
 $('pager').addEventListener('scroll', e => {
