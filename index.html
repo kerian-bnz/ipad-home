@@ -136,6 +136,9 @@
         <input id="setAmz" autocomplete="off">
         <div class="row" style="margin-top:12px"><button id="setSave">Save</button><span class="muted" id="setMsg"></span></div>
         <p class="muted" style="margin-top:10px;font-size:13px">Spotify redirect URI to register: <code id="redir"></code></p>
+        <label>Set up another device (iPad): makes a link with its own Spotify connection</label>
+        <div class="row"><button id="ipadMake">Make iPad setup link</button><button id="ipadCopy" style="display:none">Copy link</button><span class="muted" id="ipadMsg"></span></div>
+        <input id="ipadLink" readonly style="display:none;margin-top:8px">
       </details>
     </div>
   </section>
@@ -307,8 +310,23 @@ document.querySelectorAll('[data-sp]').forEach(b => b.onclick = async () => { aw
   const code = new URLSearchParams(location.search).get('code');
   if (code) {
     history.replaceState(null, '', REDIRECT);
-    try { await spToken({ grant_type:'authorization_code', code, redirect_uri:REDIRECT, code_verifier:store.get('spVerifier') }); }
-    catch { $('spMsg').textContent = 'Spotify sign-in failed. Try again.'; }
+    const forIpad = store.get('spForIpad'); store.set('spForIpad', '');
+    const params = { grant_type:'authorization_code', code, redirect_uri:REDIRECT, code_verifier:store.get('spVerifier') };
+    if (forIpad) {
+      // A separate Spotify grant for the iPad, so this device and the iPad never share (and rotate) one refresh token.
+      try {
+        const t = await (await fetch('https://accounts.spotify.com/api/token', { method:'POST',
+          headers:{ 'Content-Type':'application/x-www-form-urlencoded' }, body:new URLSearchParams({ client_id:store.get('spClient'), ...params }) })).json();
+        if (!t.refresh_token) throw new Error(t.error);
+        $('ipadLink').value = REDIRECT + '#' + new URLSearchParams({ cal:store.get('calUrl'), amz:store.get('amzUrl'), sp:store.get('spClient'), sprt:t.refresh_token });
+        $('ipadLink').style.display = 'block'; $('ipadCopy').style.display = '';
+        $('ipadMsg').textContent = 'Ready. Copy it, email it to yourself, open it on the iPad.';
+        document.querySelector('details').open = true; $('pager').scrollTo({ left: $('pager').clientWidth });
+      } catch { $('ipadMsg').textContent = 'Spotify sign-in failed. Try again.'; }
+    } else {
+      try { await spToken(params); }
+      catch { $('spMsg').textContent = 'Spotify sign-in failed. Try again.'; }
+    }
   }
   spInit(); setInterval(() => store.get('spRefresh') && spRefreshNow(), 5000);
   // Say why Spotify isn't connected when the setup link is involved.
@@ -328,6 +346,11 @@ $('setSave').onclick = () => {
   store.set('spClient', $('setSpotify').value.trim()); store.set('calUrl', $('setCal').value.trim());
   store.set('amzUrl', $('setAmz').value.trim());
   $('setMsg').textContent = 'Saved'; calendar(); spInit(); amazon();
+};
+$('ipadMake').onclick = () => { store.set('spForIpad', '1'); spLogin(); };
+$('ipadCopy').onclick = async () => {
+  try { await navigator.clipboard.writeText($('ipadLink').value); $('ipadMsg').textContent = 'Copied. Paste it in an email to yourself.'; }
+  catch { $('ipadLink').select(); $('ipadMsg').textContent = 'Press Ctrl+C to copy.'; }
 };
 
 // ---- Amazon (Google Sheet copy of FBA-Tracker via Apps Script helper) ----
