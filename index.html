@@ -24,8 +24,8 @@
   button:active { background:var(--line); }
   input { font:inherit; color:var(--text); background:var(--well); border:1px solid var(--line); border-radius:10px; padding:8px 10px; width:100%; }
   .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-  .dots { position:fixed; bottom:14px; left:0; right:0; display:flex; justify-content:center; gap:8px; }
-  .dots span { width:8px; height:8px; border-radius:50%; background:var(--line); }
+  .dots { position:fixed; bottom:4px; left:0; right:0; display:flex; justify-content:center; gap:4px; }
+  .dots span { width:10px; height:10px; border-radius:50%; background:var(--line); border:9px solid var(--bg); box-sizing:content-box; cursor:pointer; }
   .dots span.on { background:var(--text); }
   /* clock */
   #time { font-size:clamp(48px, 9vw, 110px); font-weight:200; font-variant-numeric:tabular-nums; line-height:1; }
@@ -143,7 +143,7 @@
     </div>
   </section>
 </div>
-<div class="dots"><span class="on"></span><span></span></div>
+<div class="dots"><span class="on" role="button" aria-label="Page 1"></span><span role="button" aria-label="Page 2"></span></div>
 
 <script>
 const $ = id => document.getElementById(id);
@@ -165,6 +165,8 @@ $('pager').addEventListener('scroll', e => {
   const i = Math.round(e.target.scrollLeft / e.target.clientWidth);
   document.querySelectorAll('.dots span').forEach((d, n) => d.classList.toggle('on', n === i));
 });
+// Clicking a dot changes page (no swipe with a mouse on the PC).
+document.querySelectorAll('.dots span').forEach((d, n) => d.onclick = () => $('pager').scrollTo({ left: n * $('pager').clientWidth, behavior: 'smooth' }));
 async function wake() { try { await navigator.wakeLock?.request('screen'); } catch {} }
 wake(); document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && wake());
 
